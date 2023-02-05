@@ -1,0 +1,70 @@
+﻿@page "/courses"
+@using DG.Data.Model
+@using DG.Services
+@inject ICourseService CourseService
+@if (_courses == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else
+{
+    <div>
+        @foreach (var course in _courses)
+        {
+            <h1>@course.Name - @course.Holes</h1>
+            <br/>
+        }
+        @if (_loading)
+        {
+            <p>
+                <em>Loading...</em>
+            </p>
+        }
+        else
+        {
+            <div>
+                <i>
+                    <h3>Name: </h3> <input @bind="_name"/>
+                </i>
+                <br/>
+                <i>
+                    <h3>Holes: </h3> <input @bind="_holes"/>
+                </i>
+                <br/>
+                <br/>
+                <button @onclick="SaveCourse">Save Hole</button>
+            </div>
+        }
+
+    </div>
+}
+
+
+@code
+{
+    private List<Course>? _courses;
+    private string _name = "";
+    private int _holes = 0;
+    private bool _loading;
+    private const int CourseLimit = 20;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _courses = await CourseService.GetCourses();
+    }
+
+    private async void SaveCourse()
+    {
+        _loading = true;
+        var course = await Task.Run(() => CourseService.CreateCourse(_name, _holes));
+        _courses = _courses.Prepend(course).ToList();
+        if (_courses.Count > CourseLimit)
+        {
+            _courses.RemoveRange(CourseLimit, _courses.Count - CourseLimit);
+        }
+        _loading = false;
+        StateHasChanged();
+    }
+}
